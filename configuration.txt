@@ -1,0 +1,4 @@
+PERIOD_FETCH=240
+NUM_FETCH=1
+SEARCH_FILE=phrases.txt
+SITE_FILE=sites.txt

@@ -1,11 +1,5 @@
-#include <iostream>
-#include <string>
-#include <deque>
-//#include <ifstream>
-#include <fstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "classes.cpp"
+
 #include <curl/curl.h>
 
 using namespace std;
@@ -52,7 +46,7 @@ void libcurl(string site) {
   curl_handle = curl_easy_init();
 
   /* specify URL to get */
-  curl_easy_setopt(curl_handle, CURLOPT_URL, site);
+  curl_easy_setopt(curl_handle, CURLOPT_URL, site.c_str());
 
   /* send all data to this function  */
   curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
@@ -77,7 +71,7 @@ void libcurl(string site) {
      * Now, our chunk.memory points to a memory block that is chunk.size
      * bytes big and contains the remote file.
      *
-     * Do something nice with it!
+     * check for matches with phrases
      */
 
     printf("%lu bytes retrieved\n", (long)chunk.size);
@@ -91,65 +85,20 @@ void libcurl(string site) {
   /* we're done with libcurl, so clean it up */
   curl_global_cleanup();
 
-  return 0;
+  //return 0;
 
 }
-
-
-class Phrases {
-
-  public:
-	deque<string> q;
-	
-	void readFromFile(string filename) {
-		string line;
-		ifstream file;
-		file.open(filename.c_str());
-		if(file.is_open())
-		{
-			while(getline(file, line)) 
-			{
-				q.push_front(line);
-			}
-		}
-		else
-		{ 
-			cout << "Unable to open file " << filename << endl;
-		}
-	}
-};
-
-class Sites {
-	
-  public:
-	deque<string> q;
-
-		void readFromFile(string filename) {
-		string line;
-		ifstream file;
-		file.open(filename.c_str());
-		if(file.is_open())
-		{
-			while(getline(file, line)) 
-			{
-				q.push_front(line);
-			}
-		}
-		else
-		{ 
-			cout << "Unable to open file " << filename << endl;
-		}
-	}
-};
 
 int main()
 {
 
 	Phrases p;
 	Sites s;
+	Configuration c;
 
 	p.readFromFile("phrases.txt");
 	s.readFromFile("sites.txt");
+	c.readFromFile("configuration.txt");
 
 	deque<string>::iterator i;
 	for(i = p.q.begin(); i != p.q.end(); i++)
@@ -159,5 +108,11 @@ int main()
 
 	for(i = s.q.begin(); i != s.q.end(); i++)
 		cout << *i << endl;
+
+	cout << endl;
+
+	map<string, string>::iterator it;
+	for(it = c.data.begin(); it != c.data.end(); it++)
+		cout << it->first << " " << it->second << endl;
 
 }

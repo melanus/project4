@@ -92,7 +92,7 @@ class Sites {
 	//deque<string> q;
 	SafeQueue q;	
 
-	void readFromFile(string filename) {
+	static void readFromFile(string filename) {
 		string line;
 		ifstream file;
 		file.open(filename.c_str());

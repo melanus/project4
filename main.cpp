@@ -20,18 +20,17 @@ int main()
 
 	p.readFromFile(c.data["SEARCH_FILE"]);
 
-	s.readFromFile(c.data["SITE_FILE"]);
-	
-	ofstream outputFile("results.csv");
-	outputFile << "Time,Phrase,Site,Count" << endl;
-	int run = 1;   //this will increment every time the timer goes
-
-
 	pthread_t test;
 	pthread_create(&test, NULL, &s.readFromFile, c.data["SITE_FILE"]);
 	//s.readFromFile(c.data["SITE_FILE"]);
 
 	pthread_join(test, NULL);
+
+	
+	ofstream outputFile("results.csv");
+	outputFile << "Time,Phrase,Site,Count" << endl;
+	int run = 1;   //this will increment every time the timer goes
+
 
 	while(!s.q.empty()) 
 	{

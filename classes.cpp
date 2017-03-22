@@ -6,10 +6,49 @@
 #include <stdlib.h>
 #include <string.h>
 #include <map>
+#include <mutex>
+#include <queue>
+#include <condition_variable>
 
 using namespace std;
 
 //This file contains several classes used in main.cpp
+
+class SafeQueue {
+	private:
+		queue<string> q;
+		mutex m;
+		condition_variable cv;
+
+	public:
+		SafeQueue() {}
+
+		void push(string elem) {
+			unique_lock<mutex> lock(m);
+			q.push(elem);
+			cv.notify_one();
+		}
+
+		string pop() {
+			string s;
+			
+			unique_lock<mutex> lock(m);
+			while(q.empty())
+				cv.wait(lock);
+
+			if(!q.empty()) 
+			{
+				s = q.front();
+				q.pop();
+			}
+
+			return s;
+		}
+
+		bool empty() {
+			return q.empty();
+		}
+};
 
 class Configuration {
 
@@ -50,7 +89,8 @@ class Configuration {
 class Sites {
 	
   public:
-	deque<string> q;
+	//deque<string> q;
+	SafeQueue q;	
 
 	void readFromFile(string filename) {
 		string line;
@@ -60,7 +100,7 @@ class Sites {
 		{
 			while(getline(file, line)) 
 			{
-				q.push_front(line);
+				q.push(line);   //push_front for deque
 			}
 		}
 		else
@@ -74,7 +114,8 @@ class Phrases {
 
   public:
 	deque<string> q;
-	
+	//SafeQueue q;	
+
 	void readFromFile(string filename) {
 		string line;
 		ifstream file;
@@ -92,4 +133,6 @@ class Phrases {
 		}
 	}
 };
+
+
 

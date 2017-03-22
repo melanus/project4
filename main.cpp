@@ -6,6 +6,7 @@ using namespace std;
 
 int main()
 {
+	string site;
 
 	Phrases p;
 	Sites s;
@@ -17,10 +18,16 @@ int main()
 	s.readFromFile(c.data["SITE_FILE"]);
 
 	//check each word on each site
-	deque<string>::iterator i;
-	for(i = s.q.begin(); i != s.q.end(); i++)
+	//deque<string>::iterator i;
+	while(!s.q.empty()) 
 	{
-		libcurl(*i, p.q);
+		site = s.q.pop();
+		libcurl(site, p.q);
 	}
+
+	//for(i = s.q.begin(); i != s.q.end(); i++)
+	//{
+	//	libcurl(*i, p.q);
+	//}
 
 }

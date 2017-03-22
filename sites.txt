@@ -1,2 +1,3 @@
-http://www.nd.edu/
+https://www.nd.edu/
 http://www.cnn.com/
+http://www3.nd.edu/~dthain/courses/cse30341/spring2017/

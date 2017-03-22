@@ -3,5 +3,5 @@ Cub Scouts
 CSE30341
 Operating
 Systems
-Strigel
+Striegel
 Thain

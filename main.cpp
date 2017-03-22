@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void libcurl(string site) {
+void libcurl(string site, deque<string> phrases) {
   CURL *curl_handle;
   CURLcode res;
 
@@ -43,21 +43,27 @@ void libcurl(string site) {
             curl_easy_strerror(res));
   }
   else {
-	//cout << chunk.memory << endl;
 	string data = (string)chunk.memory;
-	cout << "data size is " << data.size() << endl;
-	string target = "Notre";
-
-	while(pos != -1)
+	//cout << "data size is " << data.size() << endl;
+	string target;
+	deque<string>::iterator i;
+	for(i = phrases.begin(); i != phrases.end(); i++)
 	{
-		pos = data.find(target, pos);
-		if(pos == -1) { cout << "breaking" << endl; break; }
-		pos++;
-		count++;
-	}
+		target = *i;
+		pos = 0;
+		count = 0;
+		while(pos != -1)
+		{
+			pos = data.find(target, pos);
+			if(pos == -1) { break; }
+			pos++;
+			count++;
+		}
 
-	cout << "Notre found " << count << " times" << endl;
-    printf("%lu bytes retrieved\n", (long)chunk.size);
+		cout << target << " found " << count << " times";
+		cout << " on site " << site << endl;
+    	//printf("%lu bytes retrieved\n", (long)chunk.size);
+	}
   }
 
   /* cleanup curl stuff */
@@ -83,7 +89,12 @@ int main()
 	s.readFromFile("sites.txt");
 	c.readFromFile("configuration.txt");
 
-	libcurl(s.q[1]);
+	//check each word on each site
+	deque<string>::iterator i;
+	for(i = s.q.begin(); i != s.q.end(); i++)
+	{
+		libcurl(*i, p.q);
+	}
 
 	/*deque<string>::iterator i;
 	for(i = p.q.begin(); i != p.q.end(); i++)

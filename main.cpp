@@ -1,39 +1,15 @@
 #include "classes.cpp"
 
-#include <curl/curl.h>
+#include "libcurl.cpp"
 
 using namespace std;
-
-
-struct MemoryStruct {
-  char *memory;
-  size_t size;
-};
-
-static size_t
-WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{ 
-  size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-  
-  mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
-  if(mem->memory == NULL) {
-    /* out of memory! */ 
-    printf("not enough memory (realloc returned NULL)\n");
-    return 0;
-  }
-  
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
-  mem->size += realsize; 
-  mem->memory[mem->size] = 0;
-  
-  return realsize;
-}
-
 
 void libcurl(string site) {
   CURL *curl_handle;
   CURLcode res;
+
+  size_t pos = 0;
+  int count = 0;
 
   struct MemoryStruct chunk;
 
@@ -67,13 +43,20 @@ void libcurl(string site) {
             curl_easy_strerror(res));
   }
   else {
-    /*
-     * Now, our chunk.memory points to a memory block that is chunk.size
-     * bytes big and contains the remote file.
-     *
-     * check for matches with phrases
-     */
+	//cout << chunk.memory << endl;
+	string data = (string)chunk.memory;
+	cout << "data size is " << data.size() << endl;
+	string target = "Notre";
 
+	while(pos != -1)
+	{
+		pos = data.find(target, pos);
+		if(pos == -1) { cout << "breaking" << endl; break; }
+		pos++;
+		count++;
+	}
+
+	cout << "Notre found " << count << " times" << endl;
     printf("%lu bytes retrieved\n", (long)chunk.size);
   }
 
@@ -100,7 +83,9 @@ int main()
 	s.readFromFile("sites.txt");
 	c.readFromFile("configuration.txt");
 
-	deque<string>::iterator i;
+	libcurl(s.q[1]);
+
+	/*deque<string>::iterator i;
 	for(i = p.q.begin(); i != p.q.end(); i++)
 		cout << *i << endl;
 
@@ -114,5 +99,5 @@ int main()
 	map<string, string>::iterator it;
 	for(it = c.data.begin(); it != c.data.end(); it++)
 		cout << it->first << " " << it->second << endl;
-
+	*/
 }

@@ -1,5 +1,5 @@
 #include "classes.cpp"
-
+#include <fstream>
 #include "libcurl.cpp"
 
 using namespace std;
@@ -16,18 +16,15 @@ int main()
 
 	p.readFromFile(c.data["SEARCH_FILE"]);
 	s.readFromFile(c.data["SITE_FILE"]);
+	
+	ofstream outputFile("results.csv");
+	outputFile << "Time,Phrase,Site,Count" << endl;
+	int run = 1;   //this will increment every time the timer goes
 
-	//check each word on each site
-	//deque<string>::iterator i;
 	while(!s.q.empty()) 
 	{
 		site = s.q.pop();
-		libcurl(site, p.q);
+		libcurl(site, p.q, run);
 	}
-
-	//for(i = s.q.begin(); i != s.q.end(); i++)
-	//{
-	//	libcurl(*i, p.q);
-	//}
 
 }

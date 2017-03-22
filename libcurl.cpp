@@ -1,4 +1,5 @@
 #include <curl/curl.h>
+#include <fstream>
 
 struct MemoryStruct {
   char *memory;
@@ -25,7 +26,7 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
   return realsize;
 }
 
-void libcurl(string site, deque<string> phrases) {
+void libcurl(string site, deque<string> phrases, int run) {
   CURL *curl_handle;
   CURLcode res;
 
@@ -64,8 +65,10 @@ void libcurl(string site, deque<string> phrases) {
             curl_easy_strerror(res));
   }
   else {
+	string filename = to_string(run) + ".csv";
+	ofstream outputFile;
+	outputFile.open(filename, fstream::app);
 	string data = (string)chunk.memory;
-	//cout << "data size is " << data.size() << endl;
 	string target;
 	deque<string>::iterator i;
 	for(i = phrases.begin(); i != phrases.end(); i++)
@@ -80,9 +83,9 @@ void libcurl(string site, deque<string> phrases) {
 			pos++;
 			count++;
 		}
-
-		cout << target << " found " << count << " times";
-		cout << " on site " << site << endl;
+		outputFile << "Time," << target << "," << site << "," << count << endl;
+		//cout << target << " found " << count << " times";
+		//cout << " on site " << site << endl;
     	//printf("%lu bytes retrieved\n", (long)chunk.size);
 	}
   }

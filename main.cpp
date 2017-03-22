@@ -85,9 +85,10 @@ int main()
 	Sites s;
 	Configuration c;
 
-	p.readFromFile("phrases.txt");
-	s.readFromFile("sites.txt");
 	c.readFromFile("configuration.txt");
+
+	p.readFromFile(c.data["SEARCH_FILE"]);
+	s.readFromFile(c.data["SITE_FILE"]);
 
 	//check each word on each site
 	deque<string>::iterator i;
@@ -96,19 +97,4 @@ int main()
 		libcurl(*i, p.q);
 	}
 
-	/*deque<string>::iterator i;
-	for(i = p.q.begin(); i != p.q.end(); i++)
-		cout << *i << endl;
-
-	cout << endl;
-
-	for(i = s.q.begin(); i != s.q.end(); i++)
-		cout << *i << endl;
-
-	cout << endl;
-
-	map<string, string>::iterator it;
-	for(it = c.data.begin(); it != c.data.end(); it++)
-		cout << it->first << " " << it->second << endl;
-	*/
 }

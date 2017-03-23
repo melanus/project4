@@ -8,10 +8,10 @@
 
 using namespace std;
 
-bool flag = false;
+bool flag = true;
 int period = 180;
 
-void setflag()
+void setflag(int s)
 {
 	flag = true;
 	alarm(period);
@@ -27,8 +27,10 @@ int main()
 
 	c.readFromFile("configuration.txt");
 
+	period = atoi(c.data["PERIOD_FETCH"].c_str());
+
 	signal(SIGALRM, setflag);
-	alarm(c.data["PERIOD_FETCH"]);
+	alarm(period);
 
 	p.readFromFile(c.data["SEARCH_FILE"]);
 
@@ -37,8 +39,6 @@ int main()
 		if (flag){
 			s.readFromFile(c.data["SITE_FILE"]);
 			
-			run = 1;   //this will increment every time the timer goes
-			
 			while(!sites.empty())
 			{
 				fetcher.fetch();
@@ -46,6 +46,7 @@ int main()
 
 			}
 			flag = false;
+			++run;
 		}
 	}
 }

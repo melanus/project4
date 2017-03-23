@@ -9,6 +9,7 @@
 #include <mutex>
 #include <queue>
 #include <condition_variable>
+#include <ctime>
 
 #include "libcurl.cpp"
 
@@ -174,20 +175,21 @@ class Parser {
 		string target;
 
 		deque<string>::iterator i;
-		for(i = phrases.begin(); i != phrases.end(); i++)
-		{
+		for(i = phrases.begin(); i != phrases.end(); i++) {
+			time_t current = time(0);
+			string legibletime = ctime(&current);
+			legibletime.erase(std::remove(legibletime.begin(), legibletime.end(), '\n'), legibletime.end()); // getting rid of newline at end
 			target = *i;
 			pos = 0;
 			count = 0;
-			while(pos != -1)
-			{
+			while(pos != -1) {
 				pos = data.find(target, pos);
 				if (pos == -1) break;
 				pos++;
 				count++;
 			}
 			fileLock.lock();
-			outputFile << "Time," << target << "," << site << "," << count << endl;
+			outputFile << legibletime <<"," << target << "," << site << "," << count << endl;
 			fileLock.unlock();
 		}
 	}

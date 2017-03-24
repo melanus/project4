@@ -1,10 +1,10 @@
 CC 	= g++
-CFLAGS 	= -Wall -lpthread -lcurl
+CFLAGS 	= -Wall -lpthread -lcurl -std=c++11
 
 all: main
 
 main: 
-	$(CC) main.c -o main $(CFLAGS)
+	$(CC) main.cpp -o main $(CFLAGS)
 
 clean:
 	rm ./main *.csv

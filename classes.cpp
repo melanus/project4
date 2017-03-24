@@ -17,6 +17,7 @@ using namespace std;
 
 //This file contains several classes used in main.cpp
 
+mutex fileLock;
 template <typename T>
 class SafeQueue {
 	private:
@@ -76,7 +77,6 @@ class Configuration {
 
 	void readFromFile(string filename) {
 		setDefaults();
-		size_t pos = 0;
 		string line;
 		string token;
 		ifstream file;
@@ -103,7 +103,7 @@ class Sites {
 	//deque<string> q;
 	//SafeQueue q;	
 
-	static void readFromFile(string filename) {
+	void readFromFile(string filename) {
 		string line;
 		ifstream file;
 		file.open(filename.c_str());
@@ -145,19 +145,6 @@ class Phrases {
 	}
 };
 
-/*class Fetcher {
-	
-	public:
-		//SafeQueue data;	//this should be global
-						//the site queue should also be global
-
-	void * fetch() {
-		string site = sites.pop();
-		string html_data = libcurl(site);
-		siteData.push(html_data);
-	}
-
-};*/
 
 class Parser {
 	
@@ -199,8 +186,6 @@ void libcurl(string site) {
   CURL *curl_handle;
   CURLcode res;
 
-  size_t pos = 0;
-  int count = 0;
 
   struct MemoryStruct chunk;
 
@@ -289,3 +274,37 @@ class Fetcher {
 	
 
 
+void * fetch(void * blah) {
+	string site = sites.pop();
+	libcurl(site);	//this will push onto sitesData
+}
+
+void * parse(void * blah2) {
+	size_t pos, count;
+	string filename = to_string(run) + ".csv";
+	ofstream outputFile;
+	outputFile.open(filename, fstream::app);
+	pair<string, string> p = siteData.pop();
+	string site = p.first;
+	string data = p.second;
+	string target;
+
+	deque<string>::iterator i;
+	for(i = phrases.begin(); i != phrases.end(); i++) {
+		time_t current = time(0);
+		string legibletime = ctime(&current);
+		legibletime.erase(std::remove(legibletime.begin(), legibletime.end(), '\n'), legibletime.end()); // getting rid of newline at end
+		target = *i;
+		pos = 0;
+		count = 0;
+		while(pos != -1) {
+			pos = data.find(target, pos);
+			if (pos == -1) break;
+			pos++;
+			count++;
+		}
+		fileLock.lock();
+		outputFile << legibletime <<"," << target << "," << site << "," << count << endl;
+		fileLock.unlock();
+	}
+}

@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
 
@@ -16,14 +17,19 @@ void setflag(int s)
 	flag = true;
 	alarm(period);
 }
+
+void myfunction(int sig){
+	cout << "Exited successfully" << endl;
+	exit(0);
+}
 	
 int main()
 {
 	Phrases p;
 	Sites s;
 	Configuration c;
-	Fetcher fetcher;
-	Parser parser;
+//	Fetcher fetcher;
+//	Parser parser;
 
 	c.readFromFile("configuration.txt");
 
@@ -34,6 +40,9 @@ int main()
 
 	p.readFromFile(c.data["SEARCH_FILE"]);
 
+	pthread_t fetchtest[atoi(c.data["NUM_FETCH"].c_str())];
+	pthread_t parsetest[atoi(c.data["NUM_PARSE"].c_str())];
+
 	while(1){
 
 		if (flag){
@@ -41,12 +50,16 @@ int main()
 			
 			while(!sites.empty())
 			{
-				fetcher.fetch();
-				parser.parse();
+				for (int i=0; i < atoi(c.data["NUM_FETCH"].c_str()); i++)
+					pthread_create(&fetchtest[i], NULL, fetch, NULL);
+				//parse();
+				for (int i=0; i < atoi(c.data["NUM_PARSE"].c_str()); i++)
+					pthread_create(&parsetest[i], NULL, parse, NULL);
 
 			}
 			flag = false;
 			++run;
+			signal(SIGINT, myfunction);
 		}
 	}
 }

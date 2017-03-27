@@ -206,6 +206,9 @@ void libcurl(string site) {
   /* specify URL to get */
   curl_easy_setopt(curl_handle, CURLOPT_URL, site.c_str());
 
+  //Checking if a timeout has occured
+  curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, site.c_str());
+
   /* send all data to this function  */
   curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
@@ -223,6 +226,13 @@ void libcurl(string site) {
   if(res != CURLE_OK) {
     fprintf(stderr, "curl_easy_perform() failed: %s\n",
             curl_easy_strerror(res));
+  }
+  if(CURLE_OPERATION_TIMEDOUT == res)
+  {
+	  printf("Timeout has occurred\n");
+	  string dat = "";
+	  siteData.push(make_pair(site, dat));
+
   }
   else {
 	string dat = (string)chunk.memory;

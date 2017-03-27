@@ -245,6 +245,7 @@ void libcurl(string site) {
   else {
 	string dat = (string)chunk.memory;
 	siteData.push(make_pair(site, dat));
+	cout << endl << "pushing data from site " << site << endl; 
   }
 
   /* cleanup curl stuff */

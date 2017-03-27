@@ -37,6 +37,7 @@ class SafeQueue {
 			cv.notify_one();
 		}
 
+		//pop things off the queue atomically
 		T pop() {
 			T s;
 			
@@ -87,6 +88,7 @@ class Configuration {
 		file.open(filename.c_str());
 		if(file.is_open())
 		{
+			// reading in the config file w/ = in the middle
 			while(getline(file, line)) 
 			{
 				token = line.substr(0, line.find("="));
@@ -117,6 +119,7 @@ class Sites {
 		if(file.is_open())
 		{
 			num_sites = 0;
+			// each line is a site and push that onto queue
 			while(getline(file, line)) 
 			{
 				sites.push(line);   //push_front for deque
@@ -145,6 +148,7 @@ class Phrases {
 		file.open(filename.c_str());
 		if(file.is_open())
 		{
+			// each phrase is a line and push that onto queue
 			while(getline(file, line)) 
 			{
 				phrases.push_front(line);
@@ -192,6 +196,7 @@ class Parser {
 				pos++;
 				count++;
 			}
+			// lock mutex and output the info to a file
 			fileLock.lock();
 			outputFile << legibletime <<"," << target << "," << site << "," << count << endl;
 			fileLock.unlock();
@@ -239,6 +244,12 @@ void libcurl(string site) {
     fprintf(stderr, "curl_easy_perform() failed: %s\n",
             curl_easy_strerror(res));
   }
+  else {
+	string dat = (string)chunk.memory;
+	siteData.push(make_pair(site, dat));
+	cout << endl << "pushing data from site " << site << endl; 
+  }
+  // if a timeout has occurred
   if(CURLE_OPERATION_TIMEDOUT == res)
   {
 	  printf("Timeout has occurred\n");
@@ -246,11 +257,8 @@ void libcurl(string site) {
 	  siteData.push(make_pair(site, dat));
 
   }
-  else {
-	string dat = (string)chunk.memory;
-	siteData.push(make_pair(site, dat));
-	cout << endl << "pushing data from site " << site << endl; 
-  }
+
+
 
   /* cleanup curl stuff */
   curl_easy_cleanup(curl_handle);
@@ -280,6 +288,7 @@ class Fetcher {
 
 // function the pthread calls to fetch the site data
 void * fetch(void * psomething) {
+	// pop site off queue so you don't read it multiple times
 	string site = sites.pop();
 	libcurl(site);	//this will push onto sitesData
 }
@@ -313,6 +322,7 @@ void * parse(void * psomething) {
 			pos++;
 			count++;
 		}
+		//once again output to a file atomically by locking the mutex
 		fileLock.lock();
 		cout << "writing " << site << " results to file" << endl;
 		outputFile << legibletime <<"," << target << "," << site << "," << count << endl;

@@ -34,7 +34,9 @@ int main()
 //	Parser parser;
 
 	if(!c.readFromFile("configuration.txt")) {return 2;}
+	// read config file
 
+	// main part of the program will only execute every fetch period
 	period = atoi(c.data["PERIOD_FETCH"].c_str());
 	if(period == 0)
 	{
@@ -53,6 +55,7 @@ int main()
 	int nparse = atoi(c.data["NUM_PARSE"].c_str());
 
 	if (nfetch <= 0 || nfetch > 8) {
+	// Exiting if the number of threads exceed the limit or are 0
 		cout << "Invalid number of fetch threads\nExiting..." << endl;
 		return 1;
 	}
@@ -65,6 +68,8 @@ int main()
 	pthread_t parsetest[nparse];
 
 	int num_parsed;
+	// creating number of threads specified
+
 
 	while(1){
 		//cout << "loop reset" << endl;
@@ -83,6 +88,7 @@ int main()
 
 				for(int i = 0; i < nparse; i++)
 				{
+
 					pthread_create(&parsetest[i], NULL, parse, NULL);
 					num_parsed++;
 					cout << num_parsed << " threads parsed" << endl;

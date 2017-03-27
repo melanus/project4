@@ -31,15 +31,6 @@ class SafeQueue {
 	public:
 		SafeQueue() {}
 
-		/*void print() {
-			queue<T>::iterator i;
-			for(i = q.begin(); i != q.end(); i++)
-			{
-				cout << *i << " ";
-			}
-			cout << endl;
-		}*/
-
 		void push(T elem) {
 			unique_lock<mutex> lock(m);
 			q.push(elem);
@@ -72,6 +63,7 @@ SafeQueue<string> sites;
 deque<string> phrases;
 SafeQueue<pair<string, string> > siteData;
 int run = 1;
+int num_sites = 0;
 /* end global variables*/
 
 class Configuration {
@@ -124,10 +116,11 @@ class Sites {
 		file.open(filename.c_str());
 		if(file.is_open())
 		{
+			num_sites = 0;
 			while(getline(file, line)) 
 			{
 				sites.push(line);   //push_front for deque
-				cout << line << endl;
+				++num_sites;
 			}
 		}
 		else
@@ -135,6 +128,7 @@ class Sites {
 			cout << "Unable to open file " << filename << endl;
 			return false;
 		}
+		cout << "read " << num_sites << " sites " << endl;
 		return true;
 	}
 };
@@ -287,13 +281,11 @@ class Fetcher {
 // function the pthread calls to fetch the site data
 void * fetch(void * psomething) {
 	string site = sites.pop();
-	cout << "fetching " << site << endl;
 	libcurl(site);	//this will push onto sitesData
 }
 
 // function that the pthread calls to parse the data from libcurl
 void * parse(void * psomething) {
-	cout << "PARSING SOON LOOK FOR SITE NAME " << endl;
 	size_t pos, count;
 	string filename = to_string(run) + ".csv";
 	ofstream outputFile;

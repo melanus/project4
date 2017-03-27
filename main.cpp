@@ -14,6 +14,7 @@ int period = 180;
 
 void setflag(int s)
 {
+	cout << "alarm happened" << endl;
 	flag = true;
 	run++;
 	alarm(period);
@@ -32,7 +33,7 @@ int main()
 //	Fetcher fetcher;
 //	Parser parser;
 
-	c.readFromFile("configuration.txt");
+	if(!c.readFromFile("configuration.txt")) {return 2;}
 
 	period = atoi(c.data["PERIOD_FETCH"].c_str());
 	if(period == 0)
@@ -41,41 +42,55 @@ int main()
 		return 1;
 	}
 
+	cout << "about to set the alarm" << endl;
 	signal(SIGALRM, setflag);
 	alarm(period);
+	cout << "the alarm has been set" << endl;
 
-	p.readFromFile(c.data["SEARCH_FILE"]);
+	if(!p.readFromFile(c.data["SEARCH_FILE"])) { return 2; }
 
-	if ((atoi(c.data["NUM_FETCH"].c_str()) == 0) || (atoi(c.data["NUM_FETCH"].c_str()) > 8)) {
+	int nfetch = atoi(c.data["NUM_FETCH"].c_str());
+	int nparse = atoi(c.data["NUM_PARSE"].c_str());
+
+	if (nfetch <= 0 || nfetch > 8) {
 		cout << "Invalid number of fetch threads\nExiting..." << endl;
 		return 1;
 	}
-	if ((atoi(c.data["NUM_PARSE"].c_str()) == 0) || (atoi(c.data["NUM_PARSE"].c_str()) > 8)) {
+	if (nparse <= 0 || nparse > 8) {
 		cout << "Invalid number of parse threads\nExiting..." << endl;
 		return 1;
 	}
 
-	pthread_t fetchtest[atoi(c.data["NUM_FETCH"].c_str())];
-	pthread_t parsetest[atoi(c.data["NUM_PARSE"].c_str())];
+	pthread_t fetchtest[nfetch];
+	pthread_t parsetest[nparse];
+
+	int num_parsed;
 
 	while(1){
+		//cout << "loop reset" << endl;
+		num_parsed = 0;
 
 		if (flag){
-			//if(!s.readFromFile(c.data["SITE_FILE"])) { return 2; }
-			s.readFromFile(c.data["SITE_FILE"]);
 			
-			while(!sites.empty() && !siteData.empty())
+			if(!s.readFromFile(c.data["SITE_FILE"])) { return 2; }
+
+			cout << num_parsed << "\t" << num_sites << endl;
+			while(num_parsed < num_sites)
 			{
-				cout << "front of sites is " << sites.q.front() << endl;
-				for (int i=0; i < atoi(c.data["NUM_FETCH"].c_str()); i++)
+
+				for(int i = 0; i < nfetch; i++)
 					pthread_create(&fetchtest[i], NULL, fetch, NULL);
-				//parse();
-				for (int i=0; i < atoi(c.data["NUM_PARSE"].c_str()); i++)
+
+				for(int i = 0; i < nparse; i++)
+				{
 					pthread_create(&parsetest[i], NULL, parse, NULL);
+					num_parsed++;
+					cout << num_parsed << " threads parsed" << endl;
+				}
 
 			}
 			flag = false;
-			signal(SIGINT, exitHandler);
+			//signal(SIGINT, exitHandler);
 		}
 	}
 }

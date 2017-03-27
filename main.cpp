@@ -32,8 +32,10 @@ int main()
 //	Fetcher fetcher;
 //	Parser parser;
 
+	// read config file
 	c.readFromFile("configuration.txt");
 
+	// main part of the program will only execute every fetch period
 	period = atoi(c.data["PERIOD_FETCH"].c_str());
 	if(period == 0)
 	{
@@ -46,6 +48,7 @@ int main()
 
 	p.readFromFile(c.data["SEARCH_FILE"]);
 
+	// Exiting if the number of threads exceed the limit or are 0
 	if ((atoi(c.data["NUM_FETCH"].c_str()) == 0) || (atoi(c.data["NUM_FETCH"].c_str()) > 8)) {
 		cout << "Invalid number of fetch threads\nExiting..." << endl;
 		return 1;
@@ -55,6 +58,7 @@ int main()
 		return 1;
 	}
 
+	// creating number of threads specified
 	pthread_t fetchtest[atoi(c.data["NUM_FETCH"].c_str())];
 	pthread_t parsetest[atoi(c.data["NUM_PARSE"].c_str())];
 
@@ -67,9 +71,11 @@ int main()
 			while(!sites.empty() && !siteData.empty())
 			{
 				cout << "front of sites is " << sites.q.front() << endl;
+				// calling fetch for each thread available
 				for (int i=0; i < atoi(c.data["NUM_FETCH"].c_str()); i++)
 					pthread_create(&fetchtest[i], NULL, fetch, NULL);
 				//parse();
+				// calling pares for each thread available
 				for (int i=0; i < atoi(c.data["NUM_PARSE"].c_str()); i++)
 					pthread_create(&parsetest[i], NULL, parse, NULL);
 

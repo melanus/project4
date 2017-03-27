@@ -15,10 +15,11 @@ int period = 180;
 void setflag(int s)
 {
 	flag = true;
+	run++;
 	alarm(period);
 }
 
-void myfunction(int sig){
+void exitHandler(int sig){
 	cout << "\nExited successfully" << endl;
 	exit(0);
 }
@@ -34,6 +35,11 @@ int main()
 	c.readFromFile("configuration.txt");
 
 	period = atoi(c.data["PERIOD_FETCH"].c_str());
+	if(period == 0)
+	{
+		cout << "Invalid period specified\nExiting..."<<endl;
+		return 1;
+	}
 
 	signal(SIGALRM, setflag);
 	alarm(period);
@@ -42,9 +48,11 @@ int main()
 
 	if ((atoi(c.data["NUM_FETCH"].c_str()) == 0) || (atoi(c.data["NUM_FETCH"].c_str()) > 8)) {
 		cout << "Invalid number of fetch threads\nExiting..." << endl;
+		return 1;
 	}
 	if ((atoi(c.data["NUM_PARSE"].c_str()) == 0) || (atoi(c.data["NUM_PARSE"].c_str()) > 8)) {
 		cout << "Invalid number of parse threads\nExiting..." << endl;
+		return 1;
 	}
 
 	pthread_t fetchtest[atoi(c.data["NUM_FETCH"].c_str())];
@@ -53,10 +61,12 @@ int main()
 	while(1){
 
 		if (flag){
+			//if(!s.readFromFile(c.data["SITE_FILE"])) { return 2; }
 			s.readFromFile(c.data["SITE_FILE"]);
 			
-			while(!sites.empty())
+			while(!sites.empty() && !siteData.empty())
 			{
+				cout << "front of sites is " << sites.q.front() << endl;
 				for (int i=0; i < atoi(c.data["NUM_FETCH"].c_str()); i++)
 					pthread_create(&fetchtest[i], NULL, fetch, NULL);
 				//parse();
@@ -65,8 +75,7 @@ int main()
 
 			}
 			flag = false;
-			++run;
-			signal(SIGINT, myfunction);
+			signal(SIGINT, exitHandler);
 		}
 	}
 }

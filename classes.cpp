@@ -10,6 +10,7 @@
 #include <queue>
 #include <condition_variable>
 #include <ctime>
+#include <algorithm>
 
 #include "libcurl.cpp"
 
@@ -22,13 +23,22 @@ mutex fileLock;
 //Queue to prevent threading from interferring 
 template <typename T>
 class SafeQueue {
-	private:
+	public:
 		queue<T> q;
 		mutex m;
 		condition_variable cv;
 
 	public:
 		SafeQueue() {}
+
+		/*void print() {
+			queue<T>::iterator i;
+			for(i = q.begin(); i != q.end(); i++)
+			{
+				cout << *i << " ";
+			}
+			cout << endl;
+		}*/
 
 		void push(T elem) {
 			unique_lock<mutex> lock(m);
@@ -61,7 +71,7 @@ class SafeQueue {
 SafeQueue<string> sites;
 deque<string> phrases;
 SafeQueue<pair<string, string> > siteData;
-int run;
+int run = 1;
 /* end global variables*/
 
 class Configuration {
@@ -77,7 +87,7 @@ class Configuration {
 		data["SITE_FILE"] = "Sites.txt";
 	}
 
-	void readFromFile(string filename) {
+	bool readFromFile(string filename) {
 		setDefaults();
 		string line;
 		string token;
@@ -95,7 +105,9 @@ class Configuration {
 		else
 		{ 
 			cout << "Unable to open file " << filename << endl;
+			return false;
 		}
+		return true;
 	}
 };
 
@@ -105,7 +117,8 @@ class Sites {
 	//deque<string> q;
 	//SafeQueue q;	
 
-	void readFromFile(string filename) {
+	bool readFromFile(string filename) {
+		cout << "reading sites" << endl;
 		string line;
 		ifstream file;
 		file.open(filename.c_str());
@@ -114,12 +127,15 @@ class Sites {
 			while(getline(file, line)) 
 			{
 				sites.push(line);   //push_front for deque
+				cout << line << endl;
 			}
 		}
 		else
 		{ 
 			cout << "Unable to open file " << filename << endl;
+			return false;
 		}
+		return true;
 	}
 };
 
@@ -129,7 +145,7 @@ class Phrases {
 	//deque<string> q;
 	//SafeQueue q;	
 
-	void readFromFile(string filename) {
+	bool readFromFile(string filename) {
 		string line;
 		ifstream file;
 		file.open(filename.c_str());
@@ -143,7 +159,9 @@ class Phrases {
 		else
 		{ 
 			cout << "Unable to open file " << filename << endl;
+			return false;
 		}
+		return true;
 	}
 };
 
@@ -268,22 +286,25 @@ class Fetcher {
 // function the pthread calls to fetch the site data
 void * fetch(void * psomething) {
 	string site = sites.pop();
+	cout << "fetching " << site << endl;
 	libcurl(site);	//this will push onto sitesData
 }
 
 // function that the pthread calls to parse the data from libcurl
 void * parse(void * psomething) {
+	cout << "PARSING SOON LOOK FOR SITE NAME " << endl;
 	size_t pos, count;
 	string filename = to_string(run) + ".csv";
 	ofstream outputFile;
 	outputFile.open(filename, fstream::app);
 	pair<string, string> p = siteData.pop();
 	string site = p.first;
+	cout << "parsing " << site << endl;
 	string data = p.second;
 	string target;
 
 	deque<string>::iterator i;
-	// Iterate through each prhase and check if it is in HTML
+	// Iterate through each phrase and check if it is in HTML
 	for(i = phrases.begin(); i != phrases.end(); i++) {
 		time_t current = time(0);
 		string legibletime = ctime(&current);
@@ -300,6 +321,7 @@ void * parse(void * psomething) {
 			count++;
 		}
 		fileLock.lock();
+		cout << "writing " << site << " results to file" << endl;
 		outputFile << legibletime <<"," << target << "," << site << "," << count << endl;
 		fileLock.unlock();
 	}

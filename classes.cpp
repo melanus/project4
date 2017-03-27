@@ -18,6 +18,8 @@ using namespace std;
 //This file contains several classes used in main.cpp
 
 mutex fileLock;
+
+//Queue to prevent threading from interferring 
 template <typename T>
 class SafeQueue {
 	private:
@@ -162,13 +164,16 @@ class Parser {
 		string target;
 
 		deque<string>::iterator i;
+		// Iterate through each prhase and check if it is in HTML
 		for(i = phrases.begin(); i != phrases.end(); i++) {
 			time_t current = time(0);
+			// display time in a readable format and not just numbers
 			string legibletime = ctime(&current);
 			legibletime.erase(std::remove(legibletime.begin(), legibletime.end(), '\n'), legibletime.end()); // getting rid of newline at end
 			target = *i;
 			pos = 0;
 			count = 0;
+			// check if phrases is in the data
 			while(pos != -1) {
 				pos = data.find(target, pos);
 				if (pos == -1) break;
@@ -182,6 +187,7 @@ class Parser {
 	}
 };
 	
+// function that receives HTML from specified site
 void libcurl(string site) {
   CURL *curl_handle;
   CURLcode res;
@@ -221,29 +227,6 @@ void libcurl(string site) {
   else {
 	string dat = (string)chunk.memory;
 	siteData.push(make_pair(site, dat));
-	/*string filename = to_string(run) + ".csv";
-	ofstream outputFile;
-	outputFile.open(filename, fstream::app);
-	string data = (string)chunk.memory;
-	string target;
-	deque<string>::iterator i;
-	for(i = phrases.begin(); i != phrases.end(); i++)
-	{
-		target = *i;
-		pos = 0;
-		count = 0;
-		while(pos != -1)
-		{
-			pos = data.find(target, pos);
-			if(pos == -1) { break; }
-			pos++;
-			count++;
-		}
-		outputFile << "Time," << target << "," << site << "," << count << endl;
-		//cout << target << " found " << count << " times";
-		//cout << " on site " << site << endl;
-    	//printf("%lu bytes retrieved\n", (long)chunk.size);*/
-	//}
   }
 
   /* cleanup curl stuff */
@@ -262,8 +245,6 @@ void libcurl(string site) {
 class Fetcher {
 	
 	public:
-		//SafeQueue data;	//this should be global
-						//the site queue should also be global
 
 	void * fetch() {
 		string site = sites.pop();
@@ -274,12 +255,14 @@ class Fetcher {
 	
 
 
-void * fetch(void * blah) {
+// function the pthread calls to fetch the site data
+void * fetch(void * psomething) {
 	string site = sites.pop();
 	libcurl(site);	//this will push onto sitesData
 }
 
-void * parse(void * blah2) {
+// function that the pthread calls to parse the data from libcurl
+void * parse(void * psomething) {
 	size_t pos, count;
 	string filename = to_string(run) + ".csv";
 	ofstream outputFile;
@@ -290,13 +273,16 @@ void * parse(void * blah2) {
 	string target;
 
 	deque<string>::iterator i;
+	// Iterate through each prhase and check if it is in HTML
 	for(i = phrases.begin(); i != phrases.end(); i++) {
 		time_t current = time(0);
 		string legibletime = ctime(&current);
+		// display time in a readable format and not just numbers
 		legibletime.erase(std::remove(legibletime.begin(), legibletime.end(), '\n'), legibletime.end()); // getting rid of newline at end
 		target = *i;
 		pos = 0;
 		count = 0;
+		// check if phrases is in the data
 		while(pos != -1) {
 			pos = data.find(target, pos);
 			if (pos == -1) break;

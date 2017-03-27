@@ -16,7 +16,8 @@
 
 using namespace std;
 
-//This file contains several classes used in main.cpp
+//This file contains several classes and functions
+//used in main.cpp
 
 mutex fileLock;
 
@@ -37,7 +38,7 @@ class SafeQueue {
 			cv.notify_one();
 		}
 
-		//pop things off the queue atomically
+		//push and pop things off the queue atomically
 		T pop() {
 			T s;
 			
@@ -65,6 +66,8 @@ deque<string> phrases;
 SafeQueue<pair<string, string> > siteData;
 int run = 1;
 int num_sites = 0;
+int num_parsed = 0;
+int pthreads = 0, fthreads = 0;
 /* end global variables*/
 
 class Configuration {
@@ -108,11 +111,8 @@ class Configuration {
 class Sites {
 	
   public:
-	//deque<string> q;
-	//SafeQueue q;	
 
 	bool readFromFile(string filename) {
-		cout << "reading sites" << endl;
 		string line;
 		ifstream file;
 		file.open(filename.c_str());
@@ -131,7 +131,6 @@ class Sites {
 			cout << "Unable to open file " << filename << endl;
 			return false;
 		}
-		cout << "read " << num_sites << " sites " << endl;
 		return true;
 	}
 };
@@ -139,9 +138,6 @@ class Sites {
 class Phrases {
 
   public:
-	//deque<string> q;
-	//SafeQueue q;	
-
 	bool readFromFile(string filename) {
 		string line;
 		ifstream file;
@@ -163,46 +159,6 @@ class Phrases {
 	}
 };
 
-
-class Parser {
-	
-  public:
-	mutex fileLock;
-
-	void * parse() {
-		size_t pos, count;
-		string filename = to_string(run) + ".csv";
-		ofstream outputFile;
-		outputFile.open(filename, fstream::app);
-		pair<string, string> p = siteData.pop();
-		string site = p.first;
-		string data = p.second;
-		string target;
-
-		deque<string>::iterator i;
-		// Iterate through each prhase and check if it is in HTML
-		for(i = phrases.begin(); i != phrases.end(); i++) {
-			time_t current = time(0);
-			// display time in a readable format and not just numbers
-			string legibletime = ctime(&current);
-			legibletime.erase(std::remove(legibletime.begin(), legibletime.end(), '\n'), legibletime.end()); // getting rid of newline at end
-			target = *i;
-			pos = 0;
-			count = 0;
-			// check if phrases is in the data
-			while(pos != -1) {
-				pos = data.find(target, pos);
-				if (pos == -1) break;
-				pos++;
-				count++;
-			}
-			// lock mutex and output the info to a file
-			fileLock.lock();
-			outputFile << legibletime <<"," << target << "," << site << "," << count << endl;
-			fileLock.unlock();
-		}
-	}
-};
 	
 // function that receives HTML from specified site
 void libcurl(string site) {
@@ -234,7 +190,7 @@ void libcurl(string site) {
 
   /* some servers don't like requests that are made without a user-agent
      field, so we provide one */
-  curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+  curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, "libcurl-agent/1.0");
 
   /* get it! */
   res = curl_easy_perform(curl_handle);
@@ -247,7 +203,6 @@ void libcurl(string site) {
   else {
 	string dat = (string)chunk.memory;
 	siteData.push(make_pair(site, dat));
-	cout << endl << "pushing data from site " << site << endl; 
   }
   // if a timeout has occurred
   if(CURLE_OPERATION_TIMEDOUT == res)
@@ -271,37 +226,21 @@ void libcurl(string site) {
   //return 0;
 
 }
-
-
-class Fetcher {
 	
-	public:
-
-	void * fetch() {
-		string site = sites.pop();
-		libcurl(site);	//this will push onto sitesData
-	}
-
-};
-	
-
-
 // function the pthread calls to fetch the site data
 void * fetch(void * psomething) {
 	// pop site off queue so you don't read it multiple times
 	string site = sites.pop();
 	libcurl(site);	//this will push onto sitesData
+	fthreads--;
 }
 
 // function that the pthread calls to parse the data from libcurl
 void * parse(void * psomething) {
 	size_t pos, count;
-	string filename = to_string(run) + ".csv";
-	ofstream outputFile;
-	outputFile.open(filename, fstream::app);
+
 	pair<string, string> p = siteData.pop();
 	string site = p.first;
-	cout << "parsing " << site << endl;
 	string data = p.second;
 	string target;
 
@@ -322,10 +261,15 @@ void * parse(void * psomething) {
 			pos++;
 			count++;
 		}
+
+		string filename = to_string(run) + ".csv";
+		ofstream outputFile;
+		outputFile.open(filename, fstream::app);
 		//once again output to a file atomically by locking the mutex
 		fileLock.lock();
-		cout << "writing " << site << " results to file" << endl;
 		outputFile << legibletime <<"," << target << "," << site << "," << count << endl;
 		fileLock.unlock();
 	}
+	++num_parsed;
+	--pthreads;
 }

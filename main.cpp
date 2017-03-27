@@ -14,9 +14,9 @@ int period = 180;
 
 void setflag(int s)
 {
-	cout << "alarm happened" << endl;
 	flag = true;
 	run++;
+	signal(SIGALRM, setflag);
 	alarm(period);
 }
 
@@ -30,13 +30,11 @@ int main()
 	Phrases p;
 	Sites s;
 	Configuration c;
-//	Fetcher fetcher;
-//	Parser parser;
 
 	if(!c.readFromFile("configuration.txt")) {return 2;}
-	// read config file
+	// read config file and exit if there's an error
 
-	// main part of the program will only execute every fetch period
+	//read the period from the config and error check it
 	period = atoi(c.data["PERIOD_FETCH"].c_str());
 	if(period == 0)
 	{
@@ -44,10 +42,9 @@ int main()
 		return 1;
 	}
 
-	cout << "about to set the alarm" << endl;
+	//set alarm
 	signal(SIGALRM, setflag);
 	alarm(period);
-	cout << "the alarm has been set" << endl;
 
 	if(!p.readFromFile(c.data["SEARCH_FILE"])) { return 2; }
 
@@ -66,37 +63,39 @@ int main()
 
 	pthread_t fetchtest[nfetch];
 	pthread_t parsetest[nparse];
-
-	int num_parsed;
 	// creating number of threads specified
 
-
 	while(1){
-		//cout << "loop reset" << endl;
 		num_parsed = 0;
+		fthreads = 0; pthreads = 0;
+		//keep track of the number of currently running threads
 
 		if (flag){
 			
+			//read in sites to check
 			if(!s.readFromFile(c.data["SITE_FILE"])) { return 2; }
 
-			cout << num_parsed << "\t" << num_sites << endl;
+			//however many sites there are is how many items
+			//that we need to parse.  so keep track of progress
 			while(num_parsed < num_sites)
 			{
+				//create up to the number of speficied threads
+				while(fthreads < nfetch)	
+				{			
+					pthread_create(&fetchtest[fthreads], NULL, fetch, NULL);
+					fthreads++;
+				}
 
-				for(int i = 0; i < nfetch; i++)
-					pthread_create(&fetchtest[i], NULL, fetch, NULL);
-
-				for(int i = 0; i < nparse; i++)
+				while(pthreads < nparse)
 				{
-
-					pthread_create(&parsetest[i], NULL, parse, NULL);
-					num_parsed++;
-					cout << num_parsed << " threads parsed" << endl;
+					pthread_create(&parsetest[pthreads], NULL, parse, NULL);
+					pthreads++;
 				}
 
 			}
+			//reset and wait for next period/signal interrupt
 			flag = false;
-			//signal(SIGINT, exitHandler);
+			signal(SIGINT, exitHandler);
 		}
 	}
 }

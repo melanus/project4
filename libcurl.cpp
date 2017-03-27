@@ -1,6 +1,8 @@
 #include <curl/curl.h>
 #include <fstream>
 
+//support functions for libcurl
+
 struct MemoryStruct {
   char *memory;
   size_t size;

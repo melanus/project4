@@ -57,7 +57,7 @@ class SafeQueue {
 SafeQueue<string> sites;
 deque<string> phrases;
 SafeQueue<pair<string, string> > siteData;
-int run;
+int run = 1;
 /* end global variables*/
 
 class Configuration {
